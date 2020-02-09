@@ -1,0 +1,12 @@
+mongodbUsername: user
+mongodbPassword: pass
+mongodbDatabase: echo
+
+replicaSet:
+  enabled: true
+  replicas:
+    secondary: 2
+    arbiter: 1
+
+persistence:
+  size: 1Gi

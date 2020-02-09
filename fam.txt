@@ -1,0 +1,84 @@
+# Set up gcloud and kubectl credentials:
+- gcloud container clusters create "clust4life" --zone europe-west1-b       [though better customize a cheap cluster]
+or more specifically:
+gcloud beta container --project "veggie-kube-tut" clusters create "clust4life" --zone "europe-west1-b" --no-enable-basic-auth --cluster-version "1.15.8-gke.3" --machine-type "n1-standard-2" --image-type "COS" --disk-type "pd-standard" --disk-size "100" --metadata disable-legacy-endpoints=true --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "3" --enable-stackdriver-kubernetes --enable-ip-alias --network "projects/veggie-kube-tut/global/networks/default" --subnetwork "projects/veggie-kube-tut/regions/europe-west1/subnetworks/default" --default-max-pods-per-node "110" --addons HorizontalPodAutoscaling,HttpLoadBalancing --enable-autoupgrade --enable-autorepair
+
+- gcloud container clusters get-credentials clust4life --zone europe-west1-b
+
+# RUN echo APP:
+kubectl apply -f configmap/echo.yml
+kubectl apply -f secret/echo.yml
+kubectl apply -f deployment/echo.yml
+kubectl apply -f services/echo.yml
+  ==> or simply:   helm install echo echo   (no need to apply ingress)
+# RUN MONGODB with custom values: 
+  helm install mongo mongodb -f values/mongodb.yml
+# RUN INGRESS controller nginx: 
+  helm install nginx nginx-ingress
+kubectl apply -f ingress/
+# Install CRDs for issuer to run Cert-Manager & get (ACME) Cert:
+kubectl apply --validate=false -f https://raw.githubusercontent.com/jetstack/cert-manager/v0.13.0/deploy/manifests/00-crds.yaml
+kubectl apply -f issuer/
+kubectl create namespace cert-manager
+helm install cert-manager  --namespace cert-manager  --version v0.13.0  jetstack/cert-manager
+
+# check https connection with:
+curl https://kubersoldat.mooo.com/?input=testing
+
+# CRONjob to remove entries in db, using a script to be mounted in container:
+kubectl apply -f configmap/script.yml
+kubectl apply -f cronjob/echron.yml
+--------------------------------------------------
+
+
+
+Create deployment from image:
+  - kubectl create deployment nginx --image=nginx
+
+After having a Yaml for deployment:
+  - kubectl create -f echo101.yml
+  - kubectl get pods
+
+
+
+HELM, MONGODB
+-install helm, add repo.
+-get local clone to see yamls:
+    helm fetch stable/mongodb-replicaset --version 3.11.4
+    tar -xzvf ....
+-customize specified values and install chart:
+    helm install mongo stable/mongodb --version 7.8.1 -f values/mongodb.yml
+-get mongo service hostname for env var configmap of echo app, restart app:
+    kubectl get service
+    kubectl delete pods echo-58d95c68bb-7kj6w
+-turn un:pw into base64
+  echo "mongodb://user:pass@mongo-mongodb:27017/echo" | base64
+-insert some input in echo app, exec into mongo check db:
+    kubectl exec -ti mongo-mongodb-primary-0 bash
+      mongo -u user localhost/echo    {prompt for pass}
+        db.echos.find()
+
+* Create a ClusterIP service, install nginx-ingress controller to the cluster using Helm
+  helm install nginx stable/nginx-ingress
+
+* Create an Ingress resource to direct traffic into our Echo app
+  kubectl apply -f ingress/echo.yml
+
+
+
+------------------------
+# UNINSTALL HELMs:
+helm uninstall echo
+helm uninstall mongo
+helm uninstall nginx
+helm uninstall -n cert-manager cert-manager
+------------------------
+
+________________________
+DEBUGGING:
+  delete everything from a certain namespace you use the -n flag:
+  - kubectl delete all --all -n {namespace}
+
+  base64- use website, not bash (since it included \n in the encoding)
+
+  configmap mount- to allow permissions for script - defaultMode: 0555

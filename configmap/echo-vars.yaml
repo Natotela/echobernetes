@@ -1,4 +1,0 @@
-port: 3000
-loglevel: debug
-persist: true
-mongodburl: mongodb://mongo:27017/echo

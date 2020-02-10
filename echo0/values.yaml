@@ -1,0 +1,41 @@
+# Default values for echo-app.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+app:
+  name: echo
+  image: eu.gcr.io/veggie-kube-tut/echo-world:latest
+  port: 3000
+  replicas: 1
+  secret:
+    mongodbUri: bW9uZ29kYjovL3VzZXI6cGFzc0Btb25nby1tb25nb2RiOjI3MDE3L2VjaG8=
+  user:
+    email: labthyneighbor@gmail.com
+
+issuer: ""
+  # name: echo-prod
+  # acme:
+  #   serverUrl: https://acme-v02.api.letsencrypt.org/directory
+  #   privateKey:
+  #     name: echo-prod-pvt-key
+
+ingress:
+  tls: []
+    # - hosts:
+    #   - kubersoldat.mooo.com
+    #   secretName: echo-tls
+  rules:
+    host: kubersoldat.mooo.com
+  class: nginx
+
+service:
+  name: echo
+  port: 80
+
+resources: ""
+  # requests:
+  #   memory: 128Mi
+  #   cpu: 250m
+  # limits:
+  #   memory: 256Mi
+  #   cpu: 500m
